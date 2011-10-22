@@ -8,54 +8,74 @@
 -- This work is licensed under the Creative Commons Attribution-Share
 -- Alike License: http://creativecommons.org/licenses/by-sa/3.0/
 -- }}}
+-- based on anrxc
 
-
--- {{{ Libraries
 require("awful")
 require("awful.rules")
 require("awful.autofocus")
--- User libraries
 require("vicious")
 require("scratch")
--- }}}
+require("rodentbane")
+-- require "remdebug.engine"
+-- remdebug.engine.start()
 
-
--- {{{ Variable definitions
 local altkey = "Mod1"
 local modkey = "Mod4"
 
 local home   = os.getenv("HOME")
 local exec   = awful.util.spawn
 local sexec  = awful.util.spawn_with_shell
-local scount = screen.count()
-
 -- Beautiful theme
 beautiful.init(home .. "/.config/awesome/zenburn.lua")
 
--- Window management layouts
+gmap = function (map, cmd, ismouse)
+	local modmap = {}
+	modmap.M = modkey or "Mod4"
+	modmap.C = "Control"
+	modmap.S = "Shift"
+	local mod = {}
+	local key = ""
+	local p = string.gmatch (map, "[^-]+")
+	for w in p do
+		if modmap[w] then
+			table.insert(mod, modmap[w])
+		else
+			key = w
+			break
+		end
+	end
+
+	if ismouse then
+		return awful.button(mod, key, cmd )
+	else
+		return awful.key(mod, key, cmd )
+	end
+end
+
+mmap = function (map, cmd, ismouse)
+	return gmap ( 'M-' .. map, cmd, ismouse)
+end
+
 layouts = {
-  awful.layout.suit.tile,        -- 1
-  awful.layout.suit.tile.bottom, -- 2
-  awful.layout.suit.fair,        -- 3
-  awful.layout.suit.max,         -- 4
-  awful.layout.suit.magnifier,   -- 5
-  awful.layout.suit.floating     -- 6
+  awful.layout.suit.tile,       
+  awful.layout.suit.tile.bottom,
+  awful.layout.suit.fair,       -- grid
+  awful.layout.suit.floating     
+  -- awful.layout.suit.max,         -- 4
+  -- awful.layout.suit.magnifier,   -- 5
 }
--- }}}
 
-
--- {{{ Tags
 tags = {
-  names  = { "term", "emacs", "web", "mail", "im", 6, 7, "rss", "media" },
-  layout = { layouts[2], layouts[1], layouts[1], layouts[4], layouts[1],
-             layouts[6], layouts[6], layouts[5], layouts[6]
+  names  = { 1, 2, 3, 4, 5, 6, 7, 8, 9 },
+  layout = { layouts[1], layouts[1], layouts[1], layouts[1], layouts[1],
+             layouts[1], layouts[1], layouts[1], layouts[1]
 }}
 
-for s = 1, scount do
+for s = 1, screen.count() do
   tags[s] = awful.tag(tags.names, s, tags.layout)
   for i, t in ipairs(tags[s]) do
-      awful.tag.setproperty(t, "mwfact", i==5 and 0.13  or  0.5)
-      awful.tag.setproperty(t, "hide",  (i==6 or  i==7) and true)
+      awful.tag.setproperty(t, "mwfact", i==5 and 0.50  or  0.70)
+      -- awful.tag.setproperty(t, "hide",  (i==6 or  i==7) and true)
   end
 end
 -- }}}
@@ -153,27 +173,25 @@ vicious.register(netwidget, vicious.widgets.net, '<span color="'
 -- }}}
 
 -- {{{ Mail subject
-mailicon = widget({ type = "imagebox" })
-mailicon.image = image(beautiful.widget_mail)
+-- mailicon = widget({ type = "imagebox" })
+-- mailicon.image = image(beautiful.widget_mail)
 -- Initialize widget
-mailwidget = widget({ type = "textbox" })
+-- mailwidget = widget({ type = "textbox" })
 -- Register widget
-vicious.register(mailwidget, vicious.widgets.mbox, "$1", 181, {home .. "/mail/Inbox", 15})
+-- vicious.register(mailwidget, vicious.widgets.mbox, "$1", 181, {home .. "/mail/Inbox", 15})
 -- Register buttons
-mailwidget:buttons(awful.util.table.join(
-  awful.button({ }, 1, function () exec("urxvt -T Alpine -e alpine.exp") end)
-))
+-- mailwidget:buttons(awful.util.table.join(
+  -- awful.button({ }, 1, function () exec("urxvt -T Alpine -e alpine.exp") end)
+-- ))
 -- }}}
 
 -- {{{ Org-mode agenda
 orgicon = widget({ type = "imagebox" })
 orgicon.image = image(beautiful.widget_org)
--- Initialize widget
 orgwidget = widget({ type = "textbox" })
--- Configure widget
 local orgmode = {
-  files = { home.."/.org/computers.org",
-    home.."/.org/index.org", home.."/.org/personal.org",
+  files = { 
+		home.."/Dropbox/org/computers.org",
   },
   color = {
     past   = '<span color="'..beautiful.fg_urgent..'">',
@@ -188,7 +206,7 @@ vicious.register(orgwidget, vicious.widgets.org,
 ) -- Register buttons
 orgwidget:buttons(awful.util.table.join(
   awful.button({ }, 1, function () exec("emacsclient --eval '(org-agenda-list)'") end),
-  awful.button({ }, 3, function () exec("emacsclient --eval '(make-remember-frame)'") end)
+  awful.button({ }, 3, function () exec("emacsclient --eval '(org-capture)'") end)
 ))
 -- }}}
 
@@ -250,7 +268,7 @@ taglist.buttons = awful.util.table.join(
     awful.button({ },        5, awful.tag.viewprev
 ))
 
-for s = 1, scount do
+for s = 1, screen.count() do
     -- Create a promptbox
     promptbox[s] = awful.widget.prompt({ layout = awful.widget.layout.horizontal.leftright })
     -- Create a layoutbox
@@ -276,7 +294,7 @@ for s = 1, scount do
         {   taglist[s], layoutbox[s], separator, promptbox[s],
             ["layout"] = awful.widget.layout.horizontal.leftright
         },
-        s == 1 and systray or nil,
+        s == screen.count() and systray or nil,
         separator, datewidget, dateicon,
         separator, volwidget,  volbar.widget, volicon,
         separator, orgwidget,  orgicon,
@@ -311,50 +329,44 @@ clientbuttons = awful.util.table.join(
 -- {{{ Key bindings
 --
 -- {{{ Global keys
+globalkeys = awful.util.table.join({})
 globalkeys = awful.util.table.join(
     -- {{{ Applications
     awful.key({ modkey }, "e", function () exec("emacsclient -n -c") end),
-    awful.key({ modkey }, "r", function () exec("rox", false) end),
     awful.key({ modkey }, "w", function () exec("firefox") end),
+    awful.key({ modkey }, "u", function () exec("uzbl-tabbed") end),
+    awful.key({ modkey }, "n",  function () exec("urxvt") end),
     awful.key({ altkey }, "F1",  function () exec("urxvt") end),
-    awful.key({ altkey }, "#49", function () scratch.drop("urxvt", "bottom", nil, nil, 0.30) end),
-    awful.key({ modkey }, "a", function () exec("urxvt -T Alpine -e alpine.exp") end),
-    awful.key({ modkey }, "g", function () sexec("GTK2_RC_FILES=~/.gtkrc-gajim gajim") end),
-    awful.key({ modkey }, "q", function () exec("emacsclient --eval '(make-remember-frame)'") end),
-    awful.key({ altkey }, "#51", function () if boosk then osk(nil, mouse.screen)
-        else boosk, osk = pcall(require, "osk") end
-    end),
-    -- }}}
-
-    -- {{{ Multimedia keys
-    awful.key({}, "#235", function () exec("kscreenlocker --forcelock") end),
-    awful.key({}, "#121", function () exec("pvol.py -m") end),
-    awful.key({}, "#122", function () exec("pvol.py -p -c -2") end),
-    awful.key({}, "#123", function () exec("pvol.py -p -c  2") end),
-    awful.key({}, "#232", function () exec("plight.py -c -10") end),
-    awful.key({}, "#233", function () exec("plight.py -c  10") end),
-    awful.key({}, "#165", function () exec("sudo /usr/sbin/pm-hibernate") end),
-    awful.key({}, "#150", function () exec("sudo /usr/sbin/pm-suspend")   end),
-    awful.key({}, "#163", function () exec("pypres.py") end),
+    awful.key({ modkey, "Shift" }, "o",     rodentbane.start()),
+		awful.key({ modkey }, "p", function () exec("dmenu_run") end),
+    awful.key({ modkey }, "`", function () scratch.drop("urxvt -pe tabbed", "bottom", nil, 0.50, 0.40, true) end),
+    awful.key({ modkey }, "q", function () exec("emacsclient --eval '(org-capture)'") end),
+		awful.key({ modkey, "Shift" }, "e", function() 
+				sexec("ls /home/sapht/.vim/sessions > /home/sapht/.cache/awesome/vimsess")
+        awful.prompt.run({ prompt = "Open GVim session: " }, promptbox[mouse.screen].widget,
+            function (args) exec("gvim -c 'SessionOpen " .. args .. "'") end,
+            nil, awful.util.getdir("cache") .. "/vimsess")
+		end),
     -- }}}
 
     -- {{{ Prompt menus
-    awful.key({ altkey }, "F2", function ()
-        awful.prompt.run({ prompt = "Run: " }, promptbox[mouse.screen].widget,
-            function (...) promptbox[mouse.screen].text = exec(unpack(arg), false) end,
-            awful.completion.shell, awful.util.getdir("cache") .. "/history")
-    end),
+    awful.key({ altkey }, "F2", function () exec("urxvt -fn 'xft:Bitstream Vera Sans Mono:pixelsize=12'") end),
+    --awful.key({ altkey }, "F2", function ()
+        --awful.prompt.run({ prompt = "Run: " }, promptbox[mouse.screen].widget,
+            --function (...) promptbox[mouse.screen].text = exec(unpack(arg), false) end,
+            --awful.completion.shell, awful.util.getdir("cache") .. "/history")
+    --end),
     awful.key({ altkey }, "F3", function ()
         awful.prompt.run({ prompt = "Dictionary: " }, promptbox[mouse.screen].widget,
             function (words)
-                sexec("crodict "..words.." | ".."xmessage -timeout 10 -file -")
+                sexec("crodict "..words.." | ".."xmessage -timeout 120 -file -")
             end)
     end),
     awful.key({ altkey }, "F4", function ()
         awful.prompt.run({ prompt = "Web: " }, promptbox[mouse.screen].widget,
             function (command)
                 sexec("firefox 'http://yubnub.org/parser/parse?command="..command.."'")
-                awful.tag.viewonly(tags[scount][3])
+                awful.tag.viewonly(tags[1][3])
             end)
     end),
     awful.key({ altkey }, "F5", function ()
@@ -374,9 +386,9 @@ globalkeys = awful.util.table.join(
     -- }}}
 
     -- {{{ Tag browsing
-    awful.key({ altkey }, "n",   awful.tag.viewnext),
-    awful.key({ altkey }, "p",   awful.tag.viewprev),
-    awful.key({ altkey }, "Tab", awful.tag.history.restore),
+    -- awful.key({ altkey }, "n",   awful.tag.viewnext),
+    -- awful.key({ altkey }, "p",   awful.tag.viewprev),
+    awful.key({ modkey }, "Tab", awful.tag.history.restore),
     -- }}}
 
     -- {{{ Layout manipulation
@@ -384,8 +396,12 @@ globalkeys = awful.util.table.join(
     awful.key({ modkey }, "h",          function () awful.tag.incmwfact(-0.05) end),
     awful.key({ modkey, "Shift" }, "l", function () awful.client.incwfact(-0.05) end),
     awful.key({ modkey, "Shift" }, "h", function () awful.client.incwfact( 0.05) end),
-    awful.key({ modkey, "Shift" }, "space", function () awful.layout.inc(layouts, -1) end),
-    awful.key({ modkey },          "space", function () awful.layout.inc(layouts,  1) end),
+	awful.key({ modkey }, "F9",  function () awful.layout.set( awful.layout.suit.tile        ) end),
+	awful.key({ modkey }, "F10", function () awful.layout.set( awful.layout.suit.tile.bottom ) end),
+	awful.key({ modkey }, "F11", function () awful.layout.set( awful.layout.suit.fair        ) end),
+	awful.key({ modkey }, "F12", function () awful.layout.set( awful.layout.suit.floating    ) end),
+    --awful.key({ modkey, "Shift" }, "space", function () awful.layout.inc(layouts, -1) end),
+    --awful.key({ modkey },          "space", function () awful.layout.inc(layouts,  1) end),
     -- }}}
 
     -- {{{ Focus controls
@@ -448,7 +464,7 @@ clientkeys = awful.util.table.join(
 
 -- {{{ Keyboard digits
 local keynumber = 0
-for s = 1, scount do
+for s = 1, screen.count() do
    keynumber = math.min(9, math.max(#tags[s], keynumber));
 end
 -- }}}
@@ -487,20 +503,19 @@ awful.rules.rules = {
     { rule = { }, properties = {
       focus = true,      size_hints_honor = false,
       keys = clientkeys, buttons = clientbuttons,
-      border_width = beautiful.border_width,
-      border_color = beautiful.border_normal }
+      border_width = beautiful.client_border_width,
+      border_color = beautiful.client_border_normal }
     },
-    { rule = { class = "Firefox",  instance = "Navigator" },
-      properties = { tag = tags[scount][3] } },
-    { rule = { class = "Emacs",    instance = "emacs" },
-      properties = { tag = tags[1][2] } },
+--    { rule = { class = "Firefox",  instance = "Navigator" },
+      --properties = { tag = tags[1][3] } },
+    --{ rule = { class = "Emacs",    instance = "emacs" },
+      --properties = { tag = tags[1][2] } },
     { rule = { class = "Emacs",    instance = "_Remember_" },
       properties = { floating = true }, callback = awful.titlebar.add  },
     { rule = { class = "Xmessage", instance = "xmessage" },
       properties = { floating = true }, callback = awful.titlebar.add  },
-    { rule = { instance = "plugin-container" },
+    { rule = { instance = "firefox-bin" },
       properties = { floating = true }, callback = awful.titlebar.add  },
-    { rule = { class = "Akregator" },   properties = { tag = tags[scount][8]}},
     { rule = { name  = "Alpine" },      properties = { tag = tags[1][4]} },
     { rule = { class = "Gajim.py" },    properties = { tag = tags[1][5]} },
     { rule = { class = "Ark" },         properties = { floating = true } },
@@ -544,12 +559,12 @@ end)
 -- }}}
 
 -- {{{ Focus signal handlers
-client.add_signal("focus",   function (c) c.border_color = beautiful.border_focus  end)
-client.add_signal("unfocus", function (c) c.border_color = beautiful.border_normal end)
+client.add_signal("focus",   function (c) c.border_color = beautiful.client_border_focus  end)
+client.add_signal("unfocus", function (c) c.border_color = beautiful.client_border_normal end)
 -- }}}
 
 -- {{{ Arrange signal handler
-for s = 1, scount do screen[s]:add_signal("arrange", function ()
+for s = 1, screen.count() do screen[s]:add_signal("arrange", function ()
     local clients = awful.client.visible(s)
     local layout = awful.layout.getname(awful.layout.get(s))
 
@@ -562,4 +577,3 @@ for s = 1, scount do screen[s]:add_signal("arrange", function ()
 end
 -- }}}
 -- }}}
-

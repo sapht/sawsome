@@ -14,7 +14,7 @@ theme.wallpaper_cmd = { "/usr/bin/nitrogen --restore" }
 
 
 -- {{{ Styles
-theme.font      = "Profont 8"
+theme.font      = "Terminus 8"
 
 -- {{{ Colors
 theme.fg_normal = "#DCDCCC"
@@ -30,6 +30,10 @@ theme.border_width  = 1
 theme.border_focus  = "#6F6F6F"
 theme.border_normal = theme.bg_normal
 theme.border_marked = theme.fg_urgent
+
+theme.client_border_focus  = "#0000ff"
+theme.client_border_width  = 1
+theme.client_border_normal = "#000000"
 -- }}}
 
 -- {{{ Titlebars
